@@ -15,7 +15,7 @@ public class Uprighter : MonoBehaviour
 
 	private IEnumerator RegularlyCheckUpright()
 	{
-		for(;;)
+		while(true)
 		{
 			RecalculateUprightDirection();
 
@@ -28,7 +28,6 @@ public class Uprighter : MonoBehaviour
 				Debug.Log("I'm not upright");
 				MakeUpright();
 			}
-
 			
 			yield return new WaitForSeconds(checkFrequency);
 		}
@@ -36,12 +35,12 @@ public class Uprighter : MonoBehaviour
 
 	private bool IsUpright()
 	{
-		return this.transform.localRotation.eulerAngles == uprightDirection;
+        return transform.up == uprightDirection;
 	}
 
 	private void MakeUpright()
 	{
-		this.transform.localRotation = Quaternion.Euler(uprightDirection);
+		transform.rotation = Quaternion.FromToRotation(Vector3.up, uprightDirection);
 	}
 
 	private void RecalculateUprightDirection()
@@ -49,7 +48,7 @@ public class Uprighter : MonoBehaviour
 		RaycastHit hit;
 		if(Physics.Raycast(transform.position, -transform.up, out hit))
 		{
-			Debug.DrawLine(transform.position, hit.point, Color.cyan);
+			Debug.DrawLine(transform.position, hit.point, Color.cyan, checkFrequency);
 
 			if(hit.collider is MeshCollider)
 			{
@@ -60,27 +59,66 @@ public class Uprighter : MonoBehaviour
 			}
 		}
 
-		//uprightDirection = Vector3.up;
+        Debug.Log("we didn't hit a a mesh to align to");
+		uprightDirection = Vector3.up;
 	}
 
 	private Vector3 GetNormalFromRaycastedTriangle(GameObject hitObject, int triangleIndex)
-	{
-		Mesh hitMesh = hitObject.GetComponent<MeshFilter>().mesh;
+    {
+        Mesh hitMesh = hitObject.GetComponent<MeshFilter>().mesh;
+        int[] vertexIndices = GetTriangleVertexIndicesFromMesh(triangleIndex, hitMesh);
 
-		int[] triangles = hitMesh.triangles;
+        Vector3[] vertices = hitMesh.vertices;
+        Vector3 facePosition = GetFacePositionFromVertices(hitObject, vertices, vertexIndices);
 
-		int vertex1 = triangles[triangleIndex * 3];
-		int vertex2 = triangles[triangleIndex * 3 + 1];
-		int vertex3 = triangles[triangleIndex * 3 + 2];
+        Vector3[] vertexNormals = GetVertexNormalsFromVertices(hitObject, vertices, vertexIndices);
 
-		Vector3[] vertexNormals = hitMesh.normals;
+        Vector3 faceNormal = GetFaceNormalFromVertexNormals(vertexNormals);
 
-		Vector3 normal1 = vertexNormals[vertex1];
-		Vector3 normal2 = vertexNormals[vertex2];
-		Vector3 normal3 = vertexNormals[vertex3];
+        Debug.DrawRay(facePosition, faceNormal, Color.yellow, checkFrequency);
 
-		Vector3 faceNormal = (normal1 + normal2 + normal3)/3;
+        return faceNormal;
+    }
 
-		return faceNormal;
-	}
+    private int[] GetTriangleVertexIndicesFromMesh(int triangleIndex, Mesh hitMesh)
+    {
+        int[] triangles = hitMesh.triangles;
+
+        int[] vertexIndices = new int[3];
+
+        vertexIndices[0] = triangles[triangleIndex * 3];
+        vertexIndices[1] = triangles[triangleIndex * 3 + 1];
+        vertexIndices[2] = triangles[triangleIndex * 3 + 2];
+
+        return vertexIndices;
+    }
+
+    private Vector3 GetFacePositionFromVertices(GameObject hitObject, Vector3[] vertices, int[] vertexIndices)
+    {
+        Vector3 vertex1Position = hitObject.transform.TransformPoint(vertices[vertexIndices[0]]);
+        Vector3 vertex2Position = hitObject.transform.TransformPoint(vertices[vertexIndices[1]]);
+        Vector3 vertex3Position = hitObject.transform.TransformPoint(vertices[vertexIndices[2]]);
+
+        Vector3 facePosition = (vertex1Position + vertex2Position + vertex3Position) / 3;
+
+        return facePosition;
+    }
+
+    private Vector3[] GetVertexNormalsFromVertices(GameObject hitObject, Vector3[] vertices, int[] vertexIndices)
+    {
+        Vector3[] normals = new Vector3[3];
+
+        normals[0] = hitObject.transform.TransformDirection(vertices[vertexIndices[0]]);
+        normals[1] = hitObject.transform.TransformDirection(vertices[vertexIndices[1]]);
+        normals[2] = hitObject.transform.TransformDirection(vertices[vertexIndices[2]]);
+
+        return normals;
+    }
+
+    private Vector3 GetFaceNormalFromVertexNormals(Vector3[] normals)
+    {
+        Vector3 faceNormal = Vector3.Cross(normals[1] - normals[0], normals[1] - normals[2]);
+
+        return -faceNormal.normalized;
+    }
 }

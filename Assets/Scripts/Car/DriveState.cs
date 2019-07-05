@@ -13,7 +13,7 @@ public class DriveState : CarState
 
 	protected override string Tick()
 	{
-		car.Drive(Vector3.forward);
+		car.Drive(car.transform.forward);
 		return null;
 	}
 
