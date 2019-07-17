@@ -4,7 +4,11 @@ using UnityEngine;
 
 public class Uprighter : MonoBehaviour 
 {
-	public float checkFrequency = 0.5f;
+    [SerializeField]
+	private float checkFrequency = 0.5f;
+
+    [SerializeField]
+    private Transform uprightingCasters;
 
 	private Vector3 uprightDirection;
 
@@ -19,13 +23,8 @@ public class Uprighter : MonoBehaviour
 		{
 			RecalculateUprightDirection();
 
-			if(IsUpright())
+			if(!IsUpright())
 			{
-				Debug.Log("I'm upright.");
-			}
-			else
-			{
-				Debug.Log("I'm not upright");
 				MakeUpright();
 			}
 			
@@ -35,7 +34,12 @@ public class Uprighter : MonoBehaviour
 
 	private bool IsUpright()
 	{
-        return transform.up == uprightDirection;
+        if(transform.up != uprightDirection)
+        {
+            return false;
+        }
+
+        return true;
 	}
 
 	private void MakeUpright()
@@ -45,23 +49,44 @@ public class Uprighter : MonoBehaviour
 
 	private void RecalculateUprightDirection()
 	{
-		RaycastHit hit;
-		if(Physics.Raycast(transform.position, -transform.up, out hit))
-		{
-			Debug.DrawLine(transform.position, hit.point, Color.cyan, checkFrequency);
+        Vector3[] raycastedDirections = new Vector3[uprightingCasters.childCount];
 
-			if(hit.collider is MeshCollider)
-			{
-				GameObject hitObject = hit.collider.gameObject;
-				Vector3 normalDirection = GetNormalFromRaycastedTriangle(hitObject, hit.triangleIndex);
-				uprightDirection = normalDirection;
-				return;
-			}
-		}
+        for (int i = 0; i < raycastedDirections.Length; i++)
+        {
+            Vector3 newDirection = DoRaycastForCalculatingUprightDirection(
+                uprightingCasters.GetChild(i));
+
+            raycastedDirections[i] = newDirection;
+        }
+
+        Vector3 sumDirection = Vector3.zero;
+
+        foreach (Vector3 vector in raycastedDirections)
+        {
+            sumDirection += vector;
+        }
+
+        uprightDirection = sumDirection.normalized;
+	}
+
+    private Vector3 DoRaycastForCalculatingUprightDirection(Transform casterTransform)
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(casterTransform.position, casterTransform.forward, out hit))
+        {
+            Debug.DrawLine(casterTransform.position, hit.point, Color.cyan, checkFrequency);
+
+            if (hit.collider is MeshCollider)
+            {
+                GameObject hitObject = hit.collider.gameObject;
+                Vector3 normalDirection = GetNormalFromRaycastedTriangle(hitObject, hit.triangleIndex);
+                return normalDirection;
+            }
+        }
 
         Debug.Log("we didn't hit a a mesh to align to");
-		uprightDirection = Vector3.up;
-	}
+        return Vector3.zero;
+    }
 
 	private Vector3 GetNormalFromRaycastedTriangle(GameObject hitObject, int triangleIndex)
     {
