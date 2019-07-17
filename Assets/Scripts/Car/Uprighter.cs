@@ -25,7 +25,7 @@ public class Uprighter : MonoBehaviour
 
 			if(!IsUpright())
 			{
-				MakeUpright();
+                MakeUpright();
 			}
 			
 			yield return new WaitForSeconds(checkFrequency);
@@ -42,9 +42,31 @@ public class Uprighter : MonoBehaviour
         return true;
 	}
 
-	private void MakeUpright()
+    private void MakeUpright()
+    {
+        Quaternion goalRotation = Quaternion.FromToRotation(Vector3.up, uprightDirection);
+        StartCoroutine(LerpToGoalRotation(goalRotation));
+    }
+
+	private IEnumerator LerpToGoalRotation(Quaternion goalRotation)
 	{
-		transform.rotation = Quaternion.FromToRotation(Vector3.up, uprightDirection);
+        Quaternion startRotation = transform.rotation;
+
+        float timer = 0;
+		while(timer < checkFrequency)
+        {
+            float step = timer / checkFrequency;
+
+            //step *= 0.5f;
+
+            Quaternion newRotation = Quaternion.Lerp(startRotation, goalRotation, step);
+
+            transform.rotation = newRotation;
+
+            timer += Time.deltaTime;
+
+            yield return null;
+        }
 	}
 
 	private void RecalculateUprightDirection()
