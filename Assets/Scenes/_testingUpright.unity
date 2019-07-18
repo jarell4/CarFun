@@ -188,7 +188,7 @@ GameObject:
   m_Component:
   - component: {fileID: 305131488}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: SceneObjects
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -366,7 +366,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_LocalPosition.y
-      value: 9.71
+      value: 10.4
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_LocalPosition.z
@@ -378,7 +378,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: -0.20599005
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_LocalRotation.z
@@ -386,7 +386,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.9785541
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_RootOrder
