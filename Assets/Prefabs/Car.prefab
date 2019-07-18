@@ -174,7 +174,7 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1554973255183680}
-  m_LocalRotation: {x: -0, y: -0.20599005, z: -0, w: 0.9785541}
+  m_LocalRotation: {x: 0, y: -0.20599064, z: 0, w: 0.978554}
   m_LocalPosition: {x: 7.65, y: 10.4, z: -9.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -399,8 +399,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22c79aeaa5b97ab4d9b8d79b08a11b97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  checkFrequency: 0.1
+  checkFrequency: 0.5
   uprightingCasters: {fileID: 4910873188214574}
+  goalUprightHeight: 2
 --- !u!114 &114741371883555114
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -412,7 +413,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9439aeec4ca066549a770c125668e75c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  driveSpeed: 5
+  driveSpeed: 1
 --- !u!114 &114906076375632376
 MonoBehaviour:
   m_ObjectHideFlags: 1

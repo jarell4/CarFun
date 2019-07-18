@@ -374,23 +374,28 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_LocalRotation.y
-      value: -0.20599005
+      value: -0.20599064
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_LocalRotation.w
-      value: 0.9785541
+      value: 0.978554
       objectReference: {fileID: 0}
     - target: {fileID: 4169598050285010, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
       propertyPath: m_RootOrder
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114116208799796572, guid: 16def2a9d3334d1448f33ec7ebb97340,
+        type: 2}
+      propertyPath: goalUprightHeight
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 16def2a9d3334d1448f33ec7ebb97340, type: 2}
