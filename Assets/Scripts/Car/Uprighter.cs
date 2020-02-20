@@ -14,7 +14,7 @@ public class Uprighter : MonoBehaviour
     private float goalUprightHeight = 1f;
 
     private Vector3 goalUprightDirection;
-    private float lastCastedUprightHeight;
+    private float adjustAmountForGoalHeight;
 
 	void Start ()
 	{
@@ -43,7 +43,7 @@ public class Uprighter : MonoBehaviour
             return false;
         }
 
-        if(transform.localPosition.y != goalUprightHeight)
+        if(Mathf.Abs(adjustAmountForGoalHeight) > 0.5)
         {
             return false;
         }
@@ -53,22 +53,24 @@ public class Uprighter : MonoBehaviour
 
     private void MakeUpright()
     {
-        Vector3 newForward = Vector3.Cross(transform.right, goalUprightDirection);
-        Quaternion goalRotation = Quaternion.FromToRotation(Vector3.forward, newForward);
+        if (goalUprightDirection != Vector3.zero)
+        {
+            Vector3 newForward = Vector3.Cross(transform.right, goalUprightDirection);
+            Debug.DrawRay(transform.localPosition, newForward, Color.blue, checkFrequency);
 
-        //float heightAdjust = lastCastedUprightHeight - goalUprightHeight;
-        //Vector3 translation = transform.up * heightAdjust;
+            Quaternion goalRotation = Quaternion.FromToRotation(Vector3.forward, newForward);
+            StartCoroutine(LerpToGoalRotation(goalRotation));
+        }
 
-        //transform.localPosition += translation;
-
-        float goalHeight = 0f;
-
-        StartCoroutine(LerpToGoalRotation(goalRotation, goalHeight));
+        if (float.IsNaN(adjustAmountForGoalHeight) == false)
+        {
+            float goalHeight = transform.position.y + adjustAmountForGoalHeight;
+            StartCoroutine(LerpToGoalHeight(goalHeight));
+        }
     }
 
-	private IEnumerator LerpToGoalRotation(Quaternion goalRotation, float goalHeight)
+	private IEnumerator LerpToGoalHeight(float goalHeight)
 	{
-        Quaternion startRotation = transform.rotation;
         float startHeight = transform.localPosition.y;
 
         float timer = 0;
@@ -76,24 +78,38 @@ public class Uprighter : MonoBehaviour
         {
             float step = timer / checkFrequency;
 
-            Quaternion newRotation = Quaternion.Lerp(startRotation, goalRotation, step);
-            transform.rotation = newRotation;
+            Vector3 startPosition = new Vector3(transform.localPosition.x, startHeight, transform.localPosition.z);
+            Vector3 goalPosition = new Vector3(transform.localPosition.x, goalHeight, transform.localPosition.z);
 
-            //Vector3 startPosition = new Vector3(transform.localPosition.x, startHeight, transform.localPosition.z);
-            //Vector3 goalPosition = new Vector3(transform.localPosition.x, goalHeight, transform.localPosition.z);
-
-            //Vector3 newPosition = Vector3.Lerp(startPosition, goalPosition, step);
-            //transform.localPosition = newPosition;
+            Vector3 newPosition = Vector3.Lerp(startPosition, goalPosition, step);
+            transform.localPosition = newPosition;
 
             timer += Time.deltaTime;
             yield return null;
         }
 	}
 
+    private IEnumerator LerpToGoalRotation(Quaternion goalRotation)
+    {
+        Quaternion startRotation = transform.rotation;
+
+        float timer = 0;
+        while (timer < checkFrequency)
+        {
+            float step = timer / checkFrequency;
+
+            Quaternion newRotation = Quaternion.Lerp(startRotation, goalRotation, step);
+            transform.rotation = newRotation;
+
+            timer += Time.deltaTime;
+            yield return null;
+        }
+    }
+
 	private void RecalculateUprightGoals()
     {
         List<Vector3> raycastedDirections = new List<Vector3>();
-        float sumHeights = 0f;
+        List<float> raycastedHeights = new List<float>();
 
         for (int i = 0; i < uprightingCasters.childCount; i++)
         {
@@ -101,52 +117,17 @@ public class Uprighter : MonoBehaviour
 
             RaycastHit hit = DoRaycast(currentCaster);
             if (IsInvalidRaycastHit(hit))
-            {
-                continue;
-            }
+            {continue;}
 
-            raycastedDirections.Add(hit.normal);
-
-            if (i == 0)
-            {
-                Vector3 rayOriginPointInMyLocalSpace = transform.InverseTransformPoint(currentCaster.position);
-                Vector3 rayImpactPointInMyLocalSpace = transform.InverseTransformPoint(hit.point);
-
-                float rayDistanceInMyLocalSpace = Vector3.Distance(rayOriginPointInMyLocalSpace, rayImpactPointInMyLocalSpace);
-
-                lastCastedUprightHeight = rayDistanceInMyLocalSpace;
-            }
+            IncludeRaycastInDirectionsCalculation(raycastedDirections, hit);
+            IncludeRaycastInHeightsCalculation(raycastedHeights, hit);
         }
 
-        goalUprightDirection = averageRaycastedNormals(raycastedDirections);
-
+        goalUprightDirection = ResolveGoalDirection(raycastedDirections);
         Debug.Log("goalUprightDirection is :" + goalUprightDirection.ToString());
 
-        //lastCastedUprightHeight = sumHeights / uprightingCasters.childCount;
-    }
-
-    private Vector3 averageRaycastedNormals(List<Vector3> raycastedDirections)
-    {
-        Vector3 sumDirection = Vector3.zero;
-        foreach (Vector3 vector in raycastedDirections)
-        {
-            sumDirection += vector;
-        }
-
-        Vector3 resultantDirection = sumDirection / raycastedDirections.Count;
-
-        return resultantDirection;
-    }
-
-    private bool IsInvalidRaycastHit( RaycastHit hit)
-    {
-        if(hit.collider == null)
-        {
-            Debug.Log("Found invalid raycast");
-            return true;
-        }
-
-        return false;
+        adjustAmountForGoalHeight = ResolveAdjustAmountForGoalHeight(raycastedHeights);
+        Debug.Log("adjustAmountForGoalHeight is :" + adjustAmountForGoalHeight.ToString());
     }
 
     private RaycastHit DoRaycast(Transform casterTransform)
@@ -163,5 +144,63 @@ public class Uprighter : MonoBehaviour
         }
 
         return hit;
+    }
+
+    private bool IsInvalidRaycastHit(RaycastHit hit)
+    {
+        if (hit.collider == null)
+        {
+            Debug.Log("Found invalid raycast");
+            return true;
+        }
+
+        if(hit.distance > goalUprightHeight * 2)
+        {
+            Debug.Log("raycast hit too far");
+            return true;
+        }
+
+        return false;
+    }
+
+    private void IncludeRaycastInDirectionsCalculation(List<Vector3> directionsList, RaycastHit hit)
+    {
+        directionsList.Add(hit.normal);
+
+        Debug.DrawRay(hit.point, hit.normal, Color.yellow, checkFrequency);
+    }
+
+    private void IncludeRaycastInHeightsCalculation(List<float> heightsList, RaycastHit hit)
+    {
+        heightsList.Add(hit.distance);
+    }
+
+    private Vector3 ResolveGoalDirection(List<Vector3> raycastedDirections)
+    {
+        Vector3 sumDirection = Vector3.zero;
+        foreach (Vector3 vector in raycastedDirections)
+        {
+            sumDirection += vector;
+        }
+
+        Vector3 resultantDirection = sumDirection / raycastedDirections.Count;
+
+        return resultantDirection.normalized;
+    }
+
+    private float ResolveAdjustAmountForGoalHeight(List<float> raycastedHeights)
+    {
+        float sumDistances = 0f;
+
+        foreach(float distance in raycastedHeights)
+        {
+            sumDistances += distance;
+        }
+
+        Debug.Log("sumDistances: " + sumDistances.ToString());
+        Debug.Log("raycastedHeights.Count: " + raycastedHeights.Count.ToString());
+
+        float averageHeight = sumDistances / raycastedHeights.Count;
+        return goalUprightHeight - averageHeight;
     }
 }
