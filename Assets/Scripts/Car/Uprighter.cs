@@ -75,7 +75,6 @@ public class Uprighter : MonoBehaviour
 		while(timer < checkFrequency)
         {
             float step = timer / checkFrequency;
-            //step *= 0.5f;
 
             Quaternion newRotation = Quaternion.Lerp(startRotation, goalRotation, step);
             transform.rotation = newRotation;
@@ -93,15 +92,20 @@ public class Uprighter : MonoBehaviour
 
 	private void RecalculateUprightGoals()
     {
-        Vector3[] raycastedDirections = new Vector3[uprightingCasters.childCount];
+        List<Vector3> raycastedDirections = new List<Vector3>();
         float sumHeights = 0f;
 
-        for (int i = 0; i < raycastedDirections.Length; i++)
+        for (int i = 0; i < uprightingCasters.childCount; i++)
         {
             Transform currentCaster = uprightingCasters.GetChild(i);
-            RaycastHit hit = DoRaycast(currentCaster);
 
-            raycastedDirections[i] = hit.normal;
+            RaycastHit hit = DoRaycast(currentCaster);
+            if (IsInvalidRaycastHit(hit))
+            {
+                continue;
+            }
+
+            raycastedDirections.Add(hit.normal);
 
             if (i == 0)
             {
@@ -116,10 +120,12 @@ public class Uprighter : MonoBehaviour
 
         goalUprightDirection = averageRaycastedNormals(raycastedDirections);
 
+        Debug.Log("goalUprightDirection is :" + goalUprightDirection.ToString());
+
         //lastCastedUprightHeight = sumHeights / uprightingCasters.childCount;
     }
 
-    private Vector3 averageRaycastedNormals(Vector3[] raycastedDirections)
+    private Vector3 averageRaycastedNormals(List<Vector3> raycastedDirections)
     {
         Vector3 sumDirection = Vector3.zero;
         foreach (Vector3 vector in raycastedDirections)
@@ -127,21 +133,35 @@ public class Uprighter : MonoBehaviour
             sumDirection += vector;
         }
 
-        return sumDirection.normalized;
+        Vector3 resultantDirection = sumDirection / raycastedDirections.Count;
+
+        return resultantDirection;
+    }
+
+    private bool IsInvalidRaycastHit( RaycastHit hit)
+    {
+        if(hit.collider == null)
+        {
+            Debug.Log("Found invalid raycast");
+            return true;
+        }
+
+        return false;
     }
 
     private RaycastHit DoRaycast(Transform casterTransform)
     {
         RaycastHit hit;
+
         if (Physics.Raycast(casterTransform.position, casterTransform.forward, out hit))
         {
             Debug.DrawLine(casterTransform.position, hit.point, Color.cyan, checkFrequency);
-            return hit;
         }
         else
         {
-            Debug.Log("we didn't hit a a mesh to align to");
-            return hit;
+            Debug.Log(this.name + ": " + "Didn't hit a a mesh to align to");
         }
+
+        return hit;
     }
 }
