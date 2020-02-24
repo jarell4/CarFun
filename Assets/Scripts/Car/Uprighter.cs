@@ -43,7 +43,7 @@ public class Uprighter : MonoBehaviour
             return false;
         }
 
-        if(Mathf.Abs(adjustAmountForGoalHeight) > 0.5)
+        if(Mathf.Abs(adjustAmountForGoalHeight) > 0)
         {
             return false;
         }
@@ -53,23 +53,32 @@ public class Uprighter : MonoBehaviour
 
     private void MakeUpright()
     {
-        if (goalUprightDirection != Vector3.zero)
+        if (goalUprightDirection != Vector3.zero && goalUprightDirection != Vector3.down)
         {
-            Vector3 newForward = Vector3.Cross(transform.right, goalUprightDirection);
-            Debug.DrawRay(transform.localPosition, newForward, Color.blue, checkFrequency);
+            Vector3 left = Vector3.Cross(transform.forward, goalUprightDirection);
+            Vector3 newForward = Vector3.Cross(goalUprightDirection, left);
+            Quaternion goalRotation = Quaternion.LookRotation(newForward, goalUprightDirection);
+            UpdateToGoalRotation(goalRotation);
 
-            Quaternion goalRotation = Quaternion.FromToRotation(Vector3.forward, newForward);
-            StartCoroutine(LerpToGoalRotation(goalRotation));
+            Debug.DrawRay(transform.localPosition, goalUprightDirection, Color.green, checkFrequency);
         }
 
         if (float.IsNaN(adjustAmountForGoalHeight) == false)
         {
             float goalHeight = transform.position.y + adjustAmountForGoalHeight;
-            StartCoroutine(LerpToGoalHeight(goalHeight));
+            //UpdateToGoalHeight(goalHeight);
         }
     }
 
-	private IEnumerator LerpToGoalHeight(float goalHeight)
+    private void UpdateToGoalHeight(float height)
+    {
+        Vector3 goalPosition = new Vector3(transform.localPosition.x, height, transform.localPosition.z);
+        transform.localPosition = goalPosition;
+
+        //StartCoroutine(LerpToGoalHeight(height));
+    }
+
+    private IEnumerator LerpToGoalHeight(float goalHeight)
 	{
         float startHeight = transform.localPosition.y;
 
@@ -89,6 +98,11 @@ public class Uprighter : MonoBehaviour
         }
 	}
 
+    private void UpdateToGoalRotation(Quaternion rotation)
+    {
+        StartCoroutine(LerpToGoalRotation(rotation));
+    }
+
     private IEnumerator LerpToGoalRotation(Quaternion goalRotation)
     {
         Quaternion startRotation = transform.rotation;
@@ -98,7 +112,7 @@ public class Uprighter : MonoBehaviour
         {
             float step = timer / checkFrequency;
 
-            Quaternion newRotation = Quaternion.Lerp(startRotation, goalRotation, step);
+            Quaternion newRotation = Quaternion.Slerp(startRotation, goalRotation, step);
             transform.rotation = newRotation;
 
             timer += Time.deltaTime;
@@ -154,10 +168,10 @@ public class Uprighter : MonoBehaviour
             return true;
         }
 
-        if(hit.distance > goalUprightHeight * 2)
+        if(hit.distance > goalUprightHeight * 3)
         {
             Debug.Log("raycast hit too far");
-            return true;
+            //return true;
         }
 
         return false;
@@ -190,6 +204,10 @@ public class Uprighter : MonoBehaviour
 
     private float ResolveAdjustAmountForGoalHeight(List<float> raycastedHeights)
     {
+
+        raycastedHeights.RemoveAt(0);
+        raycastedHeights.RemoveAt(raycastedHeights.Count - 1);
+
         float sumDistances = 0f;
 
         foreach(float distance in raycastedHeights)
